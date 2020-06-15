@@ -12,37 +12,32 @@ def get_adoc_files( base_path ) :
                 adoc_files.append( os.path.join( root, file_name ) )
     return adoc_files
 
-'''assume only one keyword line exists in the document'''
-def get_kw( file_name ) :
-    context_expr = re.compile( r':keywords:(.+)' )
+def get_keywords( context_expr, file_name ) :
     with open( file_name, "r" ) as f :
-        contents = f.readlines()
-        for line in contents :
-            match_attempt = context_expr.match( line )
-            if match_attempt :
-                kws = []
-                for kw in match_attempt.group( 1 ).rstrip().split( "," ) :
-                    kw = kw.rstrip().strip()
-                    if kw != "" :
-                        kws.append( kw )
-                return kws
+        file_contents = f.readlines()
+        for line in file_contents :
+            parsed_content = context_expr.match( line )
+            if parsed_content :
+                return [ x for x in map( lambda x: x.strip(), parsed_content.group( 1 ).rstrip().split( "," ) ) if x != "" ]
+    return []
 
-def get_all_kw( base_path ) :
-    keywords = dict()
-    adoc_files = get_adoc_files( base_path )
+def get_all_keywords( base_path ) :
+    keywords     = dict()
+    context_expr = re.compile( r':keywords:(.+)' )
+    adoc_files   = get_adoc_files( base_path )
     for adoc_file in adoc_files :
-        for kw in get_kw( adoc_file ) :
-            if kw not in keywords :
-                keywords[ kw ] = 1
+        for keyword in get_keywords( context_expr, adoc_file ) :
+            if keyword not in keywords :
+                keywords[ keyword ] = 1
             else :
-                keywords[ kw ] = keywords[ kw ] + 1
+                keywords[ keyword ] = keywords[ keyword ] + 1
     return keywords
 
-def main( argv ) :
-    if len( argv ) != 2 :
+def main( cmd_opts ) :
+    if len( cmd_opts ) != 2 :
         sys.exit( -1 )
     else :
-        print( get_all_kw( sys.argv[ 1 ] ) )
+        print( get_all_keywords( sys.argv[ 1 ] ) )
 
 if __name__=="__main__" :
     main( sys.argv )
